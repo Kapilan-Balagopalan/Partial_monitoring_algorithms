@@ -1,0 +1,10 @@
+ipykernel
+numpy
+scipy
+matplotlib
+gurobipy
+cython 
+setuptools
+polyagamma
+scikit-learn
+#cyipopt
