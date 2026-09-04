@@ -1,54 +1,58 @@
-# Randomized Confidence Bounds for Partial Monitoring
+# Partial Monitoring Algorithms
 
-This repository contains the implementation of algorithms described in the paper:
+Implementation of contextual partial monitoring algorithms, extending the codebase from Heuillet et al. (ICML 2024) with additional algorithms and game variants.
 
-> **Randomized Confidence Bounds for Partial Monitoring**  
-> Heuillet et al., ICML 2024  
-> Paper: https://raw.githubusercontent.com/mlresearch/v235/main/assets/heuillet24a/heuillet24a.pdf
+## Algorithms
 
-The original codebase (CBPside, RandCBPside, STAP-Helmbolt, PGTS) is from the authors above. This fork extends it with additional algorithms:
+- **CBPside** — Confidence Bounds for Partial Monitoring (deterministic)
+- **RandCBPside** — Randomized Confidence Bounds for Partial Monitoring
+- **STAP-Helmbolt** — Helmbold et al. exploration strategy
+- **PGTS** — Polya-Gamma Thompson Sampling
+- **SquareCB.PMSide** — Inverse Gap Weighting with adaptive loss-aware water-transfer operator (added in this fork)
 
-- **SquareCB.PMSide** — Inverse Gap Weighting combined with an adaptive loss-aware water-transfer operator (Lattimore 2020), applied to contextual partial monitoring.
-- **Modified Label Efficient game** — a locally observable variant of the Label Efficient game with action 0 loss changed to [0.4, 0.4], producing a star-shaped neighbourhood graph {(0,1), (0,2)}.
+## Games
 
-This branch is a sandbox version; the original developer code is on a separate branch.
+- **Apple Tasting** — 2-action locally observable game
+- **Label Efficient** — 3-action globally observable game
+- **Label Efficient (modified)** — 3-action locally observable variant with action 0 loss [0.4, 0.4]; neighbourhood {(0,1), (0,2)}
 
-### Prerequisites
+## Requirements
 
-Before you begin, ensure you have met the following requirements:
-
-- Python 3.8
+- Python 3.8+
 - pip
 
-### Installation
+```bash
+pip install -r requirements.txt
+```
 
-Follow these steps to set up your environment and run the experiments:
+Optional: `gurobipy` (for CBPside/RandCBPside LP solving), `polyagamma` (for PGTS).
 
-1. **Create a Virtual Environment**:
-   ```bash
-   python -m venv env
-   source env/bin/activate  
+## Running Experiments
 
-2. **Install Dependencies**:
+**Apple Tasting — all algorithms:**
+```bash
+py run_comparison_at_v2.py
+```
 
-   ```bash 
-   pip install -r requirements.txt
-   ```
+**Modified Label Efficient — generic algorithms:**
+```bash
+py run_comparison_le_mod.py
+```
 
-#### Installation Troubleshooting:
+**SquareCB.PMSide on Apple Tasting only:**
+```bash
+py run_squarecb_at.py
+```
 
-- **Cyipopt**: If you encounter issues installing cyipopt, ensure you have the latest versions of pip, setuptools, and wheel. You may also need additional system dependencies. For more details, see the Cyipopt Installation Guide.
-- **Gurobi Alternative**: If you prefer not to use Gurobi, you can use PULP as an alternative optimizer. To do this, install PULP using pip install pulp.
+**Jupyter notebooks (original experiments):**
+- `experiment_contextual.ipynb` — contextual setting
+- `experiment_noncontextual.ipynb` — non-contextual setting
 
-### Running Experiments
+## Acknowledgements
 
-- **Non-contextual Experiments**: To run non-contextual experiments, use the Jupyter notebook `experiment_noncontextual.ipynb`.
-- **Contextual Experiments**: For contextual experiments, refer to the `experiment_contextual.ipynb` notebook.
-- **Use case Experiments**: For the use case, refer to the Use_case folder, approaches C-CBP, C-RandCBP  and ExploreFully are in the `utils.py` file. Specifically, see `./use_case/benchmark_use_case2.ipynb` script.
+This codebase builds on the work of Heuillet et al.:
 
-### Acknowledgements
+> *Randomized Confidence Bounds for Partial Monitoring*, ICML 2024
+> https://raw.githubusercontent.com/mlresearch/v235/main/assets/heuillet24a/heuillet24a.pdf
 
-This work was funded through Mitacs with additional support from CIFAR (CCAI Chair). 
-We thank Alliance Canada and Calcul Quebec for access to computational resources and staff expertise consultation.
-We would like to thank Junpei Komiyama, Taira Tsuchiya, Ian Lienert, Hastagiri P. Vanchinathan and James A. Grant for answering our technical questions and/or providing total/partial access to private code bases of their approaches. We also acknowledge the library pmlib of Tanguy Urvoy that was helpful to implement PM game environments.
-
+We thank the original authors for making their code available.
