@@ -41,10 +41,22 @@ class PolynomialContexts:
     #             return self.context_B
 
 class LinearContexts:
-    def __init__(self, w):
+    """Linear contexts with n_outcomes ordered outcomes (default 2, the original class).
+
+    The raw features are u ~ Uniform[0, 1]^d; get_context(normalize=True) returns the
+    standardised context (mean / std estimated at construction) and the outcome
+    distribution of the score  val = w @ u  in [0, 1]:
+        n_outcomes = 2 :  [val, 1 - val]                       (original behaviour, unchanged)
+        n_outcomes = n :  P(j) = C(n-1, j) * val**(n-1-j) * (1-val)**j ,  j = 0, ..., n-1,
+                          i.e. Binomial(n-1, val) counted from the top (outcome 0 = highest
+                          level); the expected level is affine in val and the most likely
+                          level is the equal-width bin of val (used for dynamic pricing).
+    """
+    def __init__(self, w, n_outcomes=2):
         self.d = len(w) #number of features
         self.w = w
         self.type = 'linear'
+        self.n_outcomes = int(n_outcomes)
         self.normalize()
 
     def normalize(self,):
@@ -60,7 +72,12 @@ class LinearContexts:
         context = np.random.uniform(0, 1,  self.d )
         context = np.array(context).reshape(self.d,1)
         val = self.w @ context
-        distribution = [ val[0], 1-val[0] ]
+        if self.n_outcomes == 2:
+            distribution = [ val[0], 1-val[0] ]
+        else:
+            n = self.n_outcomes - 1
+            j = np.arange(self.n_outcomes)
+            distribution = list( comb(n, j) * val[0] ** (n - j) * (1 - val[0]) ** j )
         if normalize:
             context = ( context - self.mean ) / self.std
         return context, distribution
@@ -98,29 +115,6 @@ class LinearContexts:
     #             return self.context_A
     #     elif label == 1:
     #             return self.context_B
-
-class OrdinalLinearContexts(LinearContexts):
-    """LinearContexts with n_outcomes ordered outcomes (e.g. valuation levels).
-
-    val = w @ x in [0, 1] exactly as in LinearContexts.  The outcome index j
-    (0 = highest level, n_outcomes - 1 = lowest) is Binomial(n_outcomes - 1, val)
-    counted from the top:
-        P(j) = C(n - 1, j) * val ** (n - 1 - j) * (1 - val) ** j ,   n = n_outcomes,
-    so the expected level is affine in val and the most likely level is the
-    equal-width bin of val.  For n_outcomes = 2 this is exactly LinearContexts
-    ([val, 1 - val]).
-    """
-    def __init__(self, w, n_outcomes=2):
-        self.n_outcomes = int(n_outcomes)
-        super().__init__(w)
-
-    def get_context(self, normalize):
-        context, (val, _) = super().get_context(normalize)
-        n = self.n_outcomes - 1
-        j = np.arange(self.n_outcomes)
-        distribution = comb(n, j) * val ** (n - j) * (1 - val) ** j
-        return context, list(distribution)
-
 
 class ToyContexts:
 

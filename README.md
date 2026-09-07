@@ -8,6 +8,7 @@ Implementation of contextual partial monitoring algorithms, extending the codeba
 - **RandCBPside** — Randomized Confidence Bounds for Partial Monitoring
 - **STAP-Helmbolt** — Helmbold et al. exploration strategy
 - **PGTS** — Polya-Gamma Thompson Sampling
+- **PGTS-multi** — multi-arm Pólya-Gamma Thompson Sampling (`PGTS_multiarm.py`): PG-TS logistic model per action, outcome distribution by least squares over the actions' signals, argmin expected loss; any number of actions with binary feedback
 - **SquareCB.PMSide** — Inverse Gap Weighting with adaptive loss-aware water-transfer operator (added in this fork)
 
 ## Games
@@ -50,7 +51,11 @@ py run_squarecb_at.py
 - `experiment_noncontextual.ipynb` — non-contextual setting
 
 **Jupyter notebooks (added in this fork, one experiment per notebook):**
-- `experiment_contextual_dynamic_pricing.ipynb` — contextual dynamic pricing (`c = 2`) for several numbers of prices (`N_PRICES_LIST`), same protocol and algorithms as `run_comparison_at_v2.py` (PGTS and STAP only for `N = 2`); results are written to `results/`
+- `experiment_contextual_apple_tasting.ipynb` — Apple Tasting, all algorithms of `run_comparison_at_v2.py` plus PGTS-multi
+- `experiment_contextual_label_efficient.ipynb` — Label Efficient (classic, globally observable) and Label Efficient (modified, locally observable); Random, PGTS-multi, CBPside, RandCBPside, SquareCB.PMSide
+- `experiment_contextual_dynamic_pricing.ipynb` — contextual dynamic pricing (`c = 2`) for several numbers of prices (`N_PRICES_LIST`), same protocol and algorithms as `run_comparison_at_v2.py` plus PGTS-multi (PGTS and STAP only for `N = 2`)
+
+Each notebook is self-contained (settings, game, registry, run, plot) and writes its raw results (`.npy`) and plot (`.png`) to `results/`.
 
 ## Acknowledgements
 
