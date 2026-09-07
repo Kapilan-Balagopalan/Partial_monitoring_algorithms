@@ -1,6 +1,7 @@
 
 import numpy as np
 from numpy.linalg import norm
+from scipy.special import comb
 # from torchvision import datasets, transforms
 # import torch
 import numpy as np
@@ -97,6 +98,29 @@ class LinearContexts:
     #             return self.context_A
     #     elif label == 1:
     #             return self.context_B
+
+class OrdinalLinearContexts(LinearContexts):
+    """LinearContexts with n_outcomes ordered outcomes (e.g. valuation levels).
+
+    val = w @ x in [0, 1] exactly as in LinearContexts.  The outcome index j
+    (0 = highest level, n_outcomes - 1 = lowest) is Binomial(n_outcomes - 1, val)
+    counted from the top:
+        P(j) = C(n - 1, j) * val ** (n - 1 - j) * (1 - val) ** j ,   n = n_outcomes,
+    so the expected level is affine in val and the most likely level is the
+    equal-width bin of val.  For n_outcomes = 2 this is exactly LinearContexts
+    ([val, 1 - val]).
+    """
+    def __init__(self, w, n_outcomes=2):
+        self.n_outcomes = int(n_outcomes)
+        super().__init__(w)
+
+    def get_context(self, normalize):
+        context, (val, _) = super().get_context(normalize)
+        n = self.n_outcomes - 1
+        j = np.arange(self.n_outcomes)
+        distribution = comb(n, j) * val ** (n - j) * (1 - val) ** j
+        return context, list(distribution)
+
 
 class ToyContexts:
 

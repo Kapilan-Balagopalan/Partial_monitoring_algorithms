@@ -137,6 +137,29 @@ def isNeighbor(LossMatrix, N, M, i1, i2, halfspace):
     return feasible
 
 
+def getNeighborhoodActionSet(LossMatrix, N, M, i1, i2):
+    """Neighbourhood action set N^+_{i1,i2} = { k : C_{i1} ∩ C_{i2} ⊆ C_k }
+    (Bartok, Zolghadr & Szepesvari 2012): the actions that are optimal on the whole
+    boundary face between the cells of the neighbouring actions i1 and i2.
+
+    k is in N^+ iff  max_{p in C_{i1} ∩ C_{i2}} (L_k - L_{i1}) . p  ==  0  (LP, Gurobi).
+    """
+    actions = []
+    for k in range(N):
+        m = gp.Model()
+        m.Params.LogToConsole = 0
+        vars = [m.addVar(0.0, 1.0, 0.0, GRB.CONTINUOUS, "p_{}".format(j)) for j in range(M)]
+        m.addConstr(gp.quicksum(vars) == 1.0, "simplex")
+        m.addConstr(gp.quicksum((LossMatrix[i1][j] - LossMatrix[i2][j]) * vars[j] for j in range(M)) == 0.0, "boundary")
+        for i3 in range(N):
+            m.addConstr(gp.quicksum((LossMatrix[i3][j] - LossMatrix[i1][j]) * vars[j] for j in range(M)) >= 0.0, "cell_{}".format(i3))
+        m.setObjective(gp.quicksum((LossMatrix[k][j] - LossMatrix[i1][j]) * vars[j] for j in range(M)), GRB.MAXIMIZE)
+        m.optimize()
+        if m.Status == GRB.OPTIMAL and m.ObjVal <= 1e-9:
+            actions.append(k)
+    return actions
+
+
 def getV(LossMatrix, N, M, FeedbackMatrix, SignalMatrices, mathcal_N, V):
     v = collections.defaultdict(dict)
     for pair in mathcal_N:

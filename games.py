@@ -172,6 +172,88 @@ def label_efficient_modified():
                 signal_matrices, signal_matrices_Adim, mathcal_N, v, N_plus, V)
 
 
+
+def dynamic_pricing(n_prices=2, c=2.0, n_valuations=None):
+    """Dynamic pricing game (Kleinberg & Leighton 2003; Bartok, Pal & Szepesvari 2011).
+
+    A seller posts one of N prices {1, ..., N}, the buyer has a hidden valuation in
+    {1, ..., M} (M = N by default); a sale happens iff price <= valuation.
+        loss     = valuation - price  if sold (lost revenue),   c  if not sold
+        feedback = sold / not sold
+    This is the benchmark game of the CBP / PM-DMED / TSPM experiments (N = M = 5, c = 2).
+
+    Conventions (chosen so that N = M = 2 has the structure of apple_tasting()):
+        action  i  <->  price      i + 1     (increasing)
+        outcome j  <->  valuation  M - j     (decreasing: outcome 0 = highest valuation)
+    For N = M = 2:  LossMatrix = [[1, 0], [0, c]],  FeedbackMatrix = [[1, 1], [1, 0]],
+    the low price always sells (uninformative) and the high price reveals the valuation;
+    with c = 1 the game is exactly apple tasting.  For M >= 3 no single price reveals
+    the valuation (globally but not locally observable game).
+
+    The geometry used by CBPside / RandCBPside is computed with geometry_v3 (Gurobi):
+    Pareto-optimal actions, neighbouring pairs mathcal_N, neighbourhood action sets
+    N_plus, observer sets V = all actions, observer vectors v (minimum-norm solution
+    of  sum_k S_k^T v_k = L_i - L_j  over the informative actions, zeros elsewhere,
+    as in the hand-written games).
+    """
+    N = int(n_prices)
+    M = N if n_valuations is None else int(n_valuations)
+    prices = np.arange(1, N + 1, dtype=float)
+    valuations = np.arange(M, 0, -1, dtype=float)          # outcome 0 = highest valuation
+    sold = prices[:, None] <= valuations[None, :]           # (N, M)
+    LossMatrix = np.where(sold, valuations[None, :] - prices[:, None], float(c))
+    FeedbackMatrix = sold.astype(int)                       # 1 = sold, 0 = not sold
+
+    # Signal matrices: one row per distinct feedback symbol of the action (symbol order 0, 1).
+    signal_matrices = []
+    for i in range(N):
+        symbols = sorted(set(FeedbackMatrix[i]))
+        signal_matrices.append(np.array([[1 if FeedbackMatrix[i][j] == sym else 0 for j in range(M)]
+                                         for sym in symbols]))
+
+    # Feedback matrix with globally unique symbols (PM-DMED / TSPM convention, cf. apple_tasting).
+    FeedbackMatrix_PMDMED = np.zeros((N, M), dtype=int)
+    next_symbol = 0
+    for i in range(N):
+        seen = {}
+        for j in range(M):
+            f = FeedbackMatrix[i][j]
+            if f not in seen:
+                seen[f] = next_symbol
+                next_symbol += 1
+            FeedbackMatrix_PMDMED[i][j] = seen[f]
+    A = geometry_v3.alphabet_size(FeedbackMatrix_PMDMED, N, M)
+    signal_matrices_Adim = geometry_v3.calculate_signal_matrices(FeedbackMatrix_PMDMED, N, M, A)
+
+    bandit_LossMatrix = LossMatrix.copy()
+    bandit_FeedbackMatrix = None
+    LinkMatrix = None
+    if N == M and abs(np.linalg.det(FeedbackMatrix)) > 1e-12:
+        LinkMatrix = np.linalg.inv(FeedbackMatrix) @ LossMatrix
+
+    # Geometry (Pareto-optimal actions, neighbours, neighbourhood action sets, observer vectors).
+    pareto = geometry_v3.getParetoOptimalActions(LossMatrix, N, M, [])
+    mathcal_N = [[i, j] for a, i in enumerate(pareto) for j in pareto[a + 1:]
+                 if geometry_v3.isNeighbor(LossMatrix, N, M, i, j, [])]
+
+    informative = [k for k in range(N) if len(signal_matrices[k]) > 1]
+    N_plus = collections.defaultdict(dict)
+    V = collections.defaultdict(dict)
+    V_informative = collections.defaultdict(dict)
+    for i, j in mathcal_N:
+        N_plus[i][j] = geometry_v3.getNeighborhoodActionSet(LossMatrix, N, M, i, j)
+        V[i][j] = list(range(N))
+        V_informative[i][j] = list(informative)
+    v_informative = geometry_v3.getV(LossMatrix, N, M, FeedbackMatrix, signal_matrices, mathcal_N, V_informative)
+    v = {}
+    for i, j in mathcal_N:
+        v.setdefault(i, {})[j] = [v_informative[i][j][k] if k in informative else np.zeros(len(signal_matrices[k]))
+                                  for k in range(N)]
+
+    return Game('DP', LossMatrix, FeedbackMatrix, FeedbackMatrix_PMDMED, bandit_LossMatrix, bandit_FeedbackMatrix,
+                LinkMatrix, signal_matrices, signal_matrices_Adim, mathcal_N, v, N_plus, V)
+
+
 ################### tau detection game:
 
 

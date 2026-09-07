@@ -26,8 +26,12 @@ class Evaluation_contextual:
             print(distribution)
             # distribution = context_generator.get_distribution(context)
             # outcome = np.random.choice( 2 , p = distribution )
-            outcome = 0 if distribution[0]<0.5 else 1
-            distribution = np.array([1-outcome,outcome])
+            M = len(distribution)
+            if M == 2:
+                outcome = 0 if distribution[0]<0.5 else 1        # original two-outcome rule, kept as is
+            else:
+                outcome = int(np.argmax(distribution))            # most likely outcome (multi-outcome games)
+            distribution = np.eye(M)[outcome]
 
             action = alg.get_action(t, context)
             

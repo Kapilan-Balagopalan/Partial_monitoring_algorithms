@@ -35,12 +35,15 @@ class SquareCBPMSide():
         self.M = game.n_outcomes
         self.SignalMatrices = game.SignalMatrices
 
-        # Identify action whose signal matrix is square and invertible,
-        # so we can recover the outcome distribution from signal observations.
+        # Identify an action whose signal matrix is square and invertible,
+        # so we can recover the outcome distribution from its signal observations.
+        # If there is none (e.g. dynamic pricing with >= 3 valuations), hat_q is
+        # instead the least-squares combination of all actions' predicted signals.
         self.use_water_transfer = use_water_transfer
 
         self.informative_action = self._find_informative_action()
-        self.S_inv = np.linalg.inv(self.SignalMatrices[self.informative_action])
+        self.S_inv = (np.linalg.inv(self.SignalMatrices[self.informative_action])
+                      if self.informative_action is not None else None)
 
         self.contexts = self._init_contexts()
 
@@ -57,10 +60,7 @@ class SquareCBPMSide():
                     return k
                 except np.linalg.LinAlgError:
                     continue
-        raise ValueError(
-            "No action with a square, invertible signal matrix found. "
-            "Cannot recover the outcome distribution from signals."
-        )
+        return None   # no fully informative action: use the stacked least-squares estimate
 
     def _init_contexts(self):
         return [
@@ -85,13 +85,34 @@ class SquareCBPMSide():
         hat_q(x_t) = S_k^{-1} @ weights_k @ x_t
         where k is the informative action.
         Falls back to uniform when no data yet.
+
+        Without a fully informative action, hat_q is the least-squares solution of
+        the stacked signal model  S_k @ q = weights_k @ x_t  over every action k
+        with data (uniform if the stacked signal matrices do not span the outcomes).
         """
         k = self.informative_action
-        if self.contexts[k]['weights'] is None:
-            return np.ones(self.M) / self.M
+        if k is not None:
+            if self.contexts[k]['weights'] is None:
+                return np.ones(self.M) / self.M
 
-        signal_est = self.contexts[k]['weights'] @ X   # (M, 1)
-        q = self.S_inv @ signal_est.flatten()           # (M,)
+            signal_est = self.contexts[k]['weights'] @ X   # (M, 1)
+            q = self.S_inv @ signal_est.flatten()           # (M,)
+            q = np.clip(q, 0.0, None)
+            s = q.sum()
+            return q / s if s > 0 else np.ones(self.M) / self.M
+
+        rows, preds = [], []
+        for a in range(self.N):
+            if self.contexts[a]['weights'] is None:
+                continue
+            rows.append(self.SignalMatrices[a])
+            preds.append((self.contexts[a]['weights'] @ X).flatten())
+        if not rows:
+            return np.ones(self.M) / self.M
+        S_stack = np.vstack(rows)
+        if np.linalg.matrix_rank(S_stack) < self.M:
+            return np.ones(self.M) / self.M
+        q = np.linalg.lstsq(S_stack, np.concatenate(preds), rcond=None)[0]
         q = np.clip(q, 0.0, None)
         s = q.sum()
         return q / s if s > 0 else np.ones(self.M) / self.M

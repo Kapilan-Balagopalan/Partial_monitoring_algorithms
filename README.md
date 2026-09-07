@@ -15,6 +15,7 @@ Implementation of contextual partial monitoring algorithms, extending the codeba
 - **Apple Tasting** — 2-action locally observable game
 - **Label Efficient** — 3-action globally observable game
 - **Label Efficient (modified)** — 3-action locally observable variant with action 0 loss [0.4, 0.4]; neighbourhood {(0,1), (0,2)}
+- **Dynamic Pricing** — `dynamic_pricing(n_prices, c)`: N-action partial monitoring game; no-sale cost `c` (default 2); `N = 2` is a 2-action locally observable game (Apple Tasting when `c = 1`); `N >= 3` is globally observable.
 
 ## Requirements
 
@@ -47,6 +48,9 @@ py run_squarecb_at.py
 **Jupyter notebooks (original experiments):**
 - `experiment_contextual.ipynb` — contextual setting
 - `experiment_noncontextual.ipynb` — non-contextual setting
+
+**Jupyter notebooks (added in this fork, one experiment per notebook):**
+- `experiment_contextual_dynamic_pricing.ipynb` — contextual dynamic pricing (`c = 2`) for several numbers of prices (`N_PRICES_LIST`), same protocol and algorithms as `run_comparison_at_v2.py` (PGTS and STAP only for `N = 2`); results are written to `results/`
 
 ## Acknowledgements
 
