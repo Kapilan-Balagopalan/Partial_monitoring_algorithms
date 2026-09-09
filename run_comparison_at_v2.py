@@ -39,7 +39,7 @@ N_SEEDS = 5
 D       = 10         # context dimension — must be >= 5 for CBPside/RandCBPside
                      # (their confidence formula is sqrt((d-4)*log(t)); the
                      # notebook uses d=10, so we match that here)
-GAMMA   = 1.0        # SquareCB.PMSide: effective rate gamma_t = GAMMA * sqrt(t)
+GAMMA   = 1.0        # SquareCB.PMSide: effective rate gamma_t = GAMMA * sqrt(A t), A = number of arms
 LBD     = 0.05       # ridge regularisation
 ALPHA   = 1.01       # CBPside / RandCBPside confidence-bound exponent
 

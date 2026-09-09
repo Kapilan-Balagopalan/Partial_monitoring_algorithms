@@ -23,7 +23,7 @@ N_SEEDS    = 5
 D          = 2       # context dimension (must match LinearContexts)
 
 # Algorithm hyper-parameters
-# gamma_t = GAMMA * sqrt(t) gives O(sqrt(T)) total regret.
+# gamma_t = GAMMA * sqrt(A t), A = number of arms, gives O(sqrt(A T)) total regret.
 # Base rate GAMMA=1 means at t=3000 the effective rate is ~55,
 # giving p_igw[wrong] ~ 1/(55 * gap) per round for large t.
 # mu is set internally to N (number of actions) — not a free parameter.

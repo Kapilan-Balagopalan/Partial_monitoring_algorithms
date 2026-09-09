@@ -11,7 +11,8 @@ class SquareCBPMSide():
     ----------
     game              : Game object
     d                 : context dimension
-    gamma             : learning rate for IGW (larger = more exploitation)
+    gamma             : learning rate for IGW, gamma_t = gamma * sqrt(A t) with A the number
+                        of arms (larger = more exploitation)
     mu                : exploration floor for IGW (prevents division by zero)
     lbd               : ridge regression regularization
     use_water_transfer: if False, use the identity operator (p_t = p^IGW_t).
@@ -123,17 +124,19 @@ class SquareCBPMSide():
 
     def igw_distribution(self, hat_q, t):
         """
-        Inverse-gap weighting with time-varying learning rate gamma_t = gamma * sqrt(t):
+        Inverse-gap weighting with time-varying learning rate gamma_t = gamma * sqrt(A t),
+        A = number of arms (actions):
             p^IGW_a = 1 / (mu + gamma_t * (hat_l_a - hat_l_{b_t}))  for a != b_t
             p^IGW_{b_t} = 1 - sum_{a != b_t} p^IGW_a
 
-        Using gamma_t = gamma * sqrt(t) gives O(sqrt(T)) total regret,
-        since per-round error ~ 1/(gamma*sqrt(t)*gap) which sums to O(sqrt(T)).
+        Using gamma_t = gamma * sqrt(A t) (the SquareCB rate gamma ~ sqrt(A T / regression error),
+        made anytime) gives O(sqrt(A T)) total regret, since the per-round error
+        ~ 1/(gamma*sqrt(A t)*gap) sums to O(sqrt(T / A)) and the exploration cost to O(sqrt(A T)).
         """
         hat_l = self.game.LossMatrix @ hat_q   # (N,)
         b_t = int(np.argmin(hat_l))
 
-        gamma_t = self.gamma * np.sqrt(t)
+        gamma_t = self.gamma * np.sqrt(self.N * t)   # A = N arms
 
         p = np.zeros(self.N)
         for a in range(self.N):

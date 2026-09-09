@@ -34,7 +34,7 @@ from random_algo import Random
 HORIZON = 3000
 N_SEEDS = 5
 D       = 2          # context dimension
-GAMMA   = 1.0        # SquareCB.PMSide: gamma_t = GAMMA * sqrt(t)
+GAMMA   = 1.0        # SquareCB.PMSide: gamma_t = GAMMA * sqrt(A t), A = number of arms
 LBD     = 0.05       # ridge regularisation (all ridge-regression algorithms)
 W       = np.array([0.6, 0.4])   # LinearContexts outcome-probability weights
 
