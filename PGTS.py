@@ -2,6 +2,8 @@ import numpy as np
 from polyagamma import random_polyagamma
 from scipy.special import expit
 
+# This is an algorithm for solving the apple tasting problem from Apple Tasting Revisited: Bayesian Approaches to Partially
+# Monitored Online Binary Classification https://arxiv.org/pdf/2109.14412
 
 class PGTS():
     
@@ -32,8 +34,8 @@ class PGTS():
         for m in range(1,self.gibbsits):
             comp =  features @ thetamat[m-1]
             omega = random_polyagamma( 1 , comp )
-            Omegamat = np.diag( omega ) 
-            matrix = features.T @ Omegamat @ features + self.pcovar
+            # features.T @ diag(omega) @ features without materialising the n x n diagonal matrix
+            matrix = features.T @ ( omega[:, None] * features ) + self.pcovar
             Vomega   = np.linalg.inv( matrix ) #variance
             momega   = Vomega @ ( features.T @ kappa + self.pcovar_inv @ self.pmean ) #mean
             thetamat[m] = np.random.multivariate_normal(momega, Vomega, 1)  #np.array([[0,1]]) # 
